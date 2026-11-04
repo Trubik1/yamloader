@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: yamloader-bot
+    env: docker
+    plan: free
+    region: frankfurt
+    envVars:
+      - key: BOT_TOKEN
+        value: 9241982445:AAGav98u9oKFMshRXf7KwEqxRUvl1FuoSoE
+      - key: PORT
+        value: 10000
