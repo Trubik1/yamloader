@@ -1,3 +1,13 @@
+---
+title: Yamloader
+emoji: 🎵
+colorFrom: blue
+colorTo: purple
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # 🎵 Yamloader — Музыкальный Telegram-бот
 
 Telegram-бот для мгновенного скачивания музыки из **Яндекс Музыки** и **Spotify**, а также поиска песен по названию с конвертацией в **MP3 320 kbps**, оригинальной обложкой и тегами.
