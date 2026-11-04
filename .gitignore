@@ -1,0 +1,27 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Temporary music downloads
+downloads/
+*.mp3
+*.jpg
+*.jpeg
+*.png
+*.webm
+*.m4a
+
+# IDEs
+.idea/
+.vscode/
