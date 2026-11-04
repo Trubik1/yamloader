@@ -43,12 +43,21 @@ def _get_ydl_base_opts() -> dict:
     }
 
 
+STOP_WORDS = [
+    "влог", "vlog", "новости", "экскурсия", "топ 10", "top 10",
+    "что посмотреть", "атака", "жесть", "реакция", "reaction",
+    "обзор", "подкаст", "podcast", "интервью", "interview",
+    "документальный", "фильм", "сериал", "прохождение"
+]
+
+
 def _search_top3_sync(query: str) -> List[Dict[str, Any]]:
-    """Синхронный поиск топ-3 результатов на YouTube."""
+    """Синхронный поиск топ-3 музыкальных треков на YouTube (с фильтрацией немузыкальных видео)."""
     ydl_opts = _get_ydl_base_opts()
     ydl_opts["extract_flat"] = True
 
-    search_query = f"ytsearch3:{query}"
+    # Добавляем "audio" для фокусировки поиска именно на музыке
+    search_query = f"ytsearch12:{query} audio"
     results = []
 
     try:
@@ -60,16 +69,32 @@ def _search_top3_sync(query: str) -> List[Dict[str, Any]]:
             for entry in info["entries"]:
                 if not entry:
                     continue
+
+                duration = entry.get("duration") or 0
+                title = entry.get("title", "")
+                title_lower = title.lower()
+
+                # Фильтр 1: Только песни по длительности (от 40 секунд до 8 минут)
+                if duration < 40 or duration > 480:
+                    continue
+
+                # Фильтр 2: Отсекаем влоги, новости, обзоры
+                if any(word in title_lower for word in STOP_WORDS):
+                    continue
+
                 results.append(
                     {
                         "id": entry.get("id"),
-                        "title": entry.get("title", "Без названия"),
-                        "duration": format_duration(entry.get("duration")),
-                        "duration_sec": entry.get("duration", 0),
+                        "title": title,
+                        "duration": format_duration(duration),
+                        "duration_sec": duration,
                         "uploader": entry.get("uploader", "Неизвестен"),
                         "url": f"https://www.youtube.com/watch?v={entry.get('id')}",
                     }
                 )
+
+                if len(results) >= 3:
+                    break
     except Exception as e:
         logger.error(f"Search top 3 error for query '{query}': {e}")
 
