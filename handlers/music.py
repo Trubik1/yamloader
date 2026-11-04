@@ -3,7 +3,7 @@ from aiogram import Router, F
 from aiogram.filters import CommandStart, Command
 from aiogram.types import Message, CallbackQuery, FSInputFile
 
-from services.metadata import is_music_url, parse_music_url
+from services.metadata import is_music_url, parse_music_url, extract_url
 from services.downloader import search_top3, download_track, cleanup_files
 from keyboards.inline import get_search_results_keyboard
 
@@ -52,8 +52,9 @@ async def handle_text(message: Message):
         await handle_text_search(message, text)
 
 
-async def handle_music_url(message: Message, url: str):
+async def handle_music_url(message: Message, raw_text: str):
     """Обработка ссылки на Яндекс Музыку или Spotify."""
+    url = extract_url(raw_text) or raw_text.strip()
     status_msg = await message.answer("🔍 <i>Получаю информацию о треке...</i>", parse_mode="HTML")
 
     try:
