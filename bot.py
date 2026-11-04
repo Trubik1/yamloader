@@ -41,14 +41,19 @@ async def handle_diagnostic(request):
 
     # Тест 1: Запрос веб-страницы
     try:
+        import re
         async with aiohttp.ClientSession(headers=CRAWLER_HEADERS) as session:
             async with session.get(url, timeout=aiohttp.ClientTimeout(total=8)) as resp:
                 text = await resp.text()
+                metas = re.findall(r'<meta[^>]+>', text)
+                titles = re.findall(r'<title[^>]*>(.*?)</title>', text)
+                og_matches = [m for m in metas if any(k in m for k in ['title', 'og:', 'artist', 'desc'])]
                 results["web_page"] = {
                     "status": resp.status,
                     "url": str(resp.url),
                     "len": len(text),
-                    "snippet": text[:300],
+                    "titles": titles,
+                    "og_matches": og_matches[:10],
                 }
     except Exception as e:
         results["web_page_error"] = str(e)
@@ -56,16 +61,19 @@ async def handle_diagnostic(request):
     # Тест 2: Запрос к api.music.yandex.net
     try:
         api_url = "https://api.music.yandex.net/tracks/155560266"
-        async with aiohttp.ClientSession(headers=BROWSER_HEADERS) as session:
+        headers_with_ip = dict(BROWSER_HEADERS)
+        headers_with_ip["X-Forwarded-For"] = "93.84.0.1"
+        headers_with_ip["X-Real-IP"] = "93.84.0.1"
+        async with aiohttp.ClientSession(headers=headers_with_ip) as session:
             async with session.get(api_url, timeout=aiohttp.ClientTimeout(total=8)) as resp:
                 text = await resp.text()
-                results["api"] = {
+                results["api_with_forwarded_ip"] = {
                     "status": resp.status,
                     "len": len(text),
                     "snippet": text[:300],
                 }
     except Exception as e:
-        results["api_error"] = str(e)
+        results["api_with_forwarded_ip_error"] = str(e)
 
     return web.json_response({"version": "v1.3", "results": results})
 
