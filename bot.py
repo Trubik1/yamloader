@@ -31,11 +31,43 @@ async def handle_health_check(request):
 
 
 async def handle_diagnostic(request):
-    """Диагностика парсинга трека прямо из контейнера Render."""
+    """Диагностика парсинга трека прямо из контейнера Render с детальными ошибками."""
+    import traceback
+    import aiohttp
+    from services.metadata import CRAWLER_HEADERS, BROWSER_HEADERS
+
     url = request.query.get("url", "https://music.yandex.ru/album/43869814/track/155560266")
-    from services.metadata import parse_music_url
-    meta, err = await parse_music_url(url)
-    return web.json_response({"version": "v1.2", "url": url, "meta": meta, "err": err})
+    results = {}
+
+    # Тест 1: Запрос веб-страницы
+    try:
+        async with aiohttp.ClientSession(headers=CRAWLER_HEADERS) as session:
+            async with session.get(url, timeout=aiohttp.ClientTimeout(total=8)) as resp:
+                text = await resp.text()
+                results["web_page"] = {
+                    "status": resp.status,
+                    "url": str(resp.url),
+                    "len": len(text),
+                    "snippet": text[:300],
+                }
+    except Exception as e:
+        results["web_page_error"] = str(e)
+
+    # Тест 2: Запрос к api.music.yandex.net
+    try:
+        api_url = "https://api.music.yandex.net/tracks/155560266"
+        async with aiohttp.ClientSession(headers=BROWSER_HEADERS) as session:
+            async with session.get(api_url, timeout=aiohttp.ClientTimeout(total=8)) as resp:
+                text = await resp.text()
+                results["api"] = {
+                    "status": resp.status,
+                    "len": len(text),
+                    "snippet": text[:300],
+                }
+    except Exception as e:
+        results["api_error"] = str(e)
+
+    return web.json_response({"version": "v1.3", "results": results})
 
 
 async def start_web_server():
