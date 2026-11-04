@@ -19,14 +19,23 @@ logger = logging.getLogger(__name__)
 
 
 async def handle_health_check(request):
-    """Эндпоинт для Hugging Face Spaces и Render, подтверждающий активность сервиса."""
+    """Эндпоинт для проверки активности сервиса."""
     return web.json_response(
         {
             "status": "ok",
             "service": "Yamloader Telegram Bot",
+            "version": "v1.2",
             "message": "Bot is running 24/7",
         }
     )
+
+
+async def handle_diagnostic(request):
+    """Диагностика парсинга трека прямо из контейнера Render."""
+    url = request.query.get("url", "https://music.yandex.ru/album/43869814/track/155560266")
+    from services.metadata import parse_music_url
+    meta, err = await parse_music_url(url)
+    return web.json_response({"version": "v1.2", "url": url, "meta": meta, "err": err})
 
 
 async def start_web_server():
@@ -34,6 +43,8 @@ async def start_web_server():
     app = web.Application()
     app.router.add_get("/", handle_health_check)
     app.router.add_get("/health", handle_health_check)
+    app.router.add_get("/version", handle_health_check)
+    app.router.add_get("/test", handle_diagnostic)
 
     runner = web.AppRunner(app)
     await runner.setup()
